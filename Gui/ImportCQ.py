@@ -7,6 +7,54 @@ from PySide import QtGui
 import module_locator
 import Settings
 
+from pyqode.core.api import Mode
+from pyqode.qt import QtCore
+
+class TestMode(Mode):
+    def __init__(self, codeedit):
+        super(TestMode, self).__init__()
+        self.codeedit = codeedit
+
+    def on_state_changed(self, state):
+        super(TestMode, self).on_state_changed(state)
+        if state:
+            self.editor.key_pressed.connect(self._on_key_pressed)
+        else:
+            self.editor.key_pressed.disconnect(self._on_key_pressed)
+
+    def _on_key_pressed(self, event):
+        #FreeCAD.Console.PrintMessage("lulu\n")
+        FreeCAD.Console.PrintMessage(str(int(event.key())) + "\n")
+
+        if( int(event.modifiers()) & 1073741824 ):
+            cursor = self.codeedit.textCursor()
+
+            if( event.key() == QtCore.Qt.Key_Up ):
+                cursor.movePosition(QtGui.QTextCursor.Up)
+
+            if( event.key() == QtCore.Qt.Key_Down ):
+                cursor.movePosition(QtGui.QTextCursor.Down)
+
+            if( event.key() == QtCore.Qt.Key_Left ):
+                cursor.movePosition(QtGui.QTextCursor.Left)
+
+            if( event.key() == QtCore.Qt.Key_Right ):
+                cursor.movePosition(QtGui.QTextCursor.Right)
+
+            if( event.key() == QtCore.Qt.Key_End ):
+                cursor.movePosition(QtGui.QTextCursor.EndOfLine)
+
+            if( event.key() == QtCore.Qt.Key_Backspace ):
+                self.codeedit.textCursor().deletePreviousChar()
+
+            # - does not work, I never get an event when I press AltGr+M = Delete
+            # I do get an event when I press AltGr+Delete though
+            if( event.key() == QtCore.Qt.Key_Delete ):
+                self.codeedit.textCursor().deleteChar()
+
+            self.codeedit.setTextCursor(cursor)
+
+
 #Distinguish python built-in open function from the one declared here
 if open.__module__ == '__builtin__':
     pythonopen = open
@@ -16,12 +64,10 @@ def AutoExecute(self):
     """We should be able to pass the Gui.Commands.CadQueryExecuteScript function directly to the file_reloaded
        connect function, but that causes a segfault in FreeCAD. This function is a work-around for that. This
        function is passed to file_reloaded signal and in turn calls the CadQueryExecuteScript.Activated function."""
-    try:
-        import CadQuery.Gui.Command
-        CadQuery.Gui.Command.CadQueryExecuteScript().Activated()
-    except:
-        import Gui.Command
-        Gui.Command.CadQueryExecuteScript().Activated()
+    import Gui.Command
+
+    Gui.Command.CadQueryExecuteScript().Activated()
+
 
 def open(filename):
     #All of the Gui.* calls in the Python console break after opening if we don't do this
@@ -72,6 +118,8 @@ def open(filename):
     else:
         codePane = PyCodeEdit(server_script=server_path, interpreter=interpreter
                               , args=['-s', libs_dir_path])
+
+    codePane.modes.append(TestMode(codePane))
 
     # Allow easy use of an external editor
     if Settings.use_external_editor:
