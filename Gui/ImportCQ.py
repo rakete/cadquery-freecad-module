@@ -10,21 +10,20 @@ import Settings
 from pyqode.core.api import Mode
 from pyqode.qt import QtCore
 
-class TestMode(Mode):
+class AltGrKeymapMode(Mode):
     def __init__(self, codeedit):
-        super(TestMode, self).__init__()
+        super(AltGrKeymapMode, self).__init__()
         self.codeedit = codeedit
 
     def on_state_changed(self, state):
-        super(TestMode, self).on_state_changed(state)
+        super(AltGrKeymapMode, self).on_state_changed(state)
         if state:
             self.editor.key_pressed.connect(self._on_key_pressed)
         else:
             self.editor.key_pressed.disconnect(self._on_key_pressed)
 
     def _on_key_pressed(self, event):
-        #FreeCAD.Console.PrintMessage("lulu\n")
-        FreeCAD.Console.PrintMessage(str(int(event.key())) + "\n")
+        #FreeCAD.Console.PrintMessage(str(int(event.key())) + "\n")
 
         if( int(event.modifiers()) & 1073741824 ):
             cursor = self.codeedit.textCursor()
@@ -119,7 +118,7 @@ def open(filename):
         codePane = PyCodeEdit(server_script=server_path, interpreter=interpreter
                               , args=['-s', libs_dir_path])
 
-    codePane.modes.append(TestMode(codePane))
+    codePane.modes.append(AltGrKeymapMode(codePane))
 
     # Allow easy use of an external editor
     if Settings.use_external_editor:
